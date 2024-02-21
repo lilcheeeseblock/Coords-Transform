@@ -1,0 +1,74 @@
+import PySimpleGUI as sg
+import matplotlib.pyplot as plt
+import numpy as np
+import os.path
+from astropy.coordinates import SkyCoord, EarthLocation, AltAz
+from astropy.time import Time
+import astropy.units as u
+
+sg.theme('SandyBeach')
+
+def calculate_alt_az(ra, dec, observer_lat, observer_lon, observer_elevation, observation_time):
+    # Define the coordinates of the object
+    coord = SkyCoord(ra=ra, dec=dec, unit='hourangle', equinox='J2000')
+
+    # Define the observer's location
+    observer_location = EarthLocation(lat=observer_lat, lon=observer_lon, height=observer_elevation)
+
+    # Define the observation time
+    observation_time = Time(observation_time)
+
+    # Transform coordinates to Altitude/Azimuth frame
+    altaz_frame = AltAz(obstime=observation_time, location=observer_location)
+    altaz_coords = coord.transform_to(altaz_frame)
+
+    return altaz_coords.alt.deg, altaz_coords.az.deg 
+
+layout = [ 
+    [sg.Text('Equatorial Coordinates to Altitude/Azimuth')],
+    [sg.Text('Please Input Equatorial Coordinates')],
+    [sg.Text('Right Ascension; 00h00m00s', size =(25, 1)), sg.InputText()],
+    [sg.Text('Declination; 00d00m00s', size =(25, 1)), sg.InputText()],
+    [sg.Text('Please Input Your Coordinates')],
+    [sg.Text('Your Latitude', size =(25, 1)), sg.InputText()],
+    [sg.Text('Your Longitude', size =(25, 1)), sg.InputText()],
+    [sg.Text('Your Elevation (in meters)', size =(25, 1)), sg.InputText()],
+    [sg.Text('Please Input Date and Time of Observation')],
+    [sg.Text('Date; YYYY-MM-DD ', size =(25, 1)), sg.InputText()],
+    [sg.Text('Time; HH:MM:SS ', size =(25, 1)), sg.InputText()],
+    [sg.Button("Submit"), sg.Button("Cancel")]
+]
+
+
+
+window = sg.Window('Coordinate Translator', layout)
+event, values = window.read()
+window.close()
+
+print(values)
+
+ra = str(values[0])
+
+dec = str(values[1])
+
+observer_lat = float(values[2])
+observer_lon = float(values[3])
+observer_elevation = float(values[4])
+
+observation_time = str(values[5]) + "T" + str(values[6])
+
+
+altitude, azimuth = calculate_alt_az(ra, dec, observer_lat, observer_lon, observer_elevation, observation_time)
+
+layout = [
+    [sg.Text('Transformed Coordinates')],
+    [sg.Text('Altitude angle is ' + str(altitude))],
+    [sg.Text('Azimuth angle is ' + str(azimuth))],
+    [sg.Button("OK")]
+    ]
+
+window = sg.Window('Coordinate Translator', layout)
+event = window.read()
+window.close()
+
+print(altitude, azimuth)
