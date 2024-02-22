@@ -6,8 +6,10 @@ from astropy.coordinates import SkyCoord, EarthLocation, AltAz
 from astropy.time import Time
 import astropy.units as u
 
+#choose theme for window
 sg.theme('SandyBeach')
 
+#takes in equatorial coords + observer location and gives horizontal coords
 def calculate_alt_az(ra, dec, observer_lat, observer_lon, observer_elevation, observation_time):
     # Define the coordinates of the object
     coord = SkyCoord(ra=ra, dec=dec, unit='hourangle', equinox='J2000')
@@ -24,6 +26,7 @@ def calculate_alt_az(ra, dec, observer_lat, observer_lon, observer_elevation, ob
 
     return altaz_coords.alt.deg, altaz_coords.az.deg 
 
+#choose gui layout
 layout = [ 
     [sg.Text('Equatorial Coordinates to Altitude/Azimuth')],
     [sg.Text('Please Input Equatorial Coordinates')],
@@ -39,27 +42,23 @@ layout = [
     [sg.Button("Submit"), sg.Button("Cancel")]
 ]
 
-
-
+#puts together all gui specs and runs it
 window = sg.Window('Coordinate Translator', layout)
 event, values = window.read()
 window.close()
 
-print(values)
-
+#formatting answers to be accepted by astropy library functions
 ra = str(values[0])
-
 dec = str(values[1])
-
 observer_lat = float(values[2])
 observer_lon = float(values[3])
 observer_elevation = float(values[4])
-
 observation_time = str(values[5]) + "T" + str(values[6])
 
-
+#plugging in user inputs to receive values for altitude and azimuth
 altitude, azimuth = calculate_alt_az(ra, dec, observer_lat, observer_lon, observer_elevation, observation_time)
 
+create a second window displaying the altitude and azimuth angles
 layout = [
     [sg.Text('Transformed Coordinates')],
     [sg.Text('Altitude angle is ' + str(altitude))],
@@ -70,5 +69,3 @@ layout = [
 window = sg.Window('Coordinate Translator', layout)
 event = window.read()
 window.close()
-
-print(altitude, azimuth)
