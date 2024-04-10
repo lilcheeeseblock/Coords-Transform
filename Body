@@ -1,40 +1,41 @@
 import PySimpleGUI as sg
 import matplotlib.pyplot as plt
-import numpy as np
-import os.path
 from astropy.coordinates import SkyCoord, EarthLocation, AltAz
 from astropy.time import Time
 import astropy.units as u
+import matplotlib.pyplot as plt
+from mpl_toolkits.basemap import Basemap
+import MapCode
 
-#choose theme for window
-sg.theme('SandyBeach')
 
-#takes in equatorial coords + observer location and gives horizontal coords
-def calculate_alt_az(ra, dec, observer_lat, observer_lon, observer_elevation, observation_time):
-    # Define the coordinates of the object
-    coord = SkyCoord(ra=ra, dec=dec, unit='hourangle', equinox='J2000')
+def script1_function():
+    sg.theme('SandyBeach')
 
-    # Define the observer's location
-    observer_location = EarthLocation(lat=observer_lat, lon=observer_lon, height=observer_elevation)
+    def calculate_alt_az(ra, dec, observer_lat, observer_lon, observer_elevation, observation_time):
+        # Define the coordinates of the object
+        coord = SkyCoord(ra=ra, dec=dec, unit='hourangle', equinox='J2000')
 
-    # Define the observation time
-    observation_time = Time(observation_time)
+        # Define the observer's location
+        observer_location = EarthLocation(lat=observer_lat, lon=observer_lon, height=observer_elevation)
 
-    # Transform coordinates to Altitude/Azimuth frame
-    altaz_frame = AltAz(obstime=observation_time, location=observer_location)
-    altaz_coords = coord.transform_to(altaz_frame)
+        # Define the observation time
+        observation_time = Time(observation_time)
 
-    return altaz_coords.alt.deg, altaz_coords.az.deg 
+        # Transform coordinates to Altitude/Azimuth frame
+        altaz_frame = AltAz(obstime=observation_time, location=observer_location)
+        altaz_coords = coord.transform_to(altaz_frame)
 
-#choose gui layout
-layout = [ 
+        return altaz_coords.alt.deg, altaz_coords.az.deg 
+
+    #establish gui layout
+    layout = [ 
     [sg.Text('Equatorial Coordinates to Altitude/Azimuth')],
     [sg.Text('Please Input Equatorial Coordinates')],
     [sg.Text('Right Ascension; 00h00m00s', size =(25, 1)), sg.InputText()],
     [sg.Text('Declination; 00d00m00s', size =(25, 1)), sg.InputText()],
     [sg.Text('Please Input Your Coordinates')],
-    [sg.Text('Your Latitude', size =(25, 1)), sg.InputText()],
-    [sg.Text('Your Longitude', size =(25, 1)), sg.InputText()],
+    [sg.Text('Your Latitude; 00d00m00s', size =(25, 1)), sg.InputText()],
+    [sg.Text('Your Longitude; 00d00m00s', size =(25, 1)), sg.InputText()],
     [sg.Text('Your Elevation (in meters)', size =(25, 1)), sg.InputText()],
     [sg.Text('Please Input Date and Time of Observation')],
     [sg.Text('Date; YYYY-MM-DD ', size =(25, 1)), sg.InputText()],
@@ -42,30 +43,78 @@ layout = [
     [sg.Button("Submit"), sg.Button("Cancel")]
 ]
 
-#puts together all gui specs and runs it
-window = sg.Window('Coordinate Translator', layout)
-event, values = window.read()
-window.close()
 
-#formatting answers to be accepted by astropy library functions
-ra = str(values[0])
-dec = str(values[1])
-observer_lat = float(values[2])
-observer_lon = float(values[3])
-observer_elevation = float(values[4])
-observation_time = str(values[5]) + "T" + str(values[6])
 
-#plugging in user inputs to receive values for altitude and azimuth
-altitude, azimuth = calculate_alt_az(ra, dec, observer_lat, observer_lon, observer_elevation, observation_time)
+    #open window and save values
+    window = sg.Window('Coordinate Translator', layout)
+    event, values = window.read()
+    window.close()
 
-create a second window displaying the altitude and azimuth angles
-layout = [
-    [sg.Text('Transformed Coordinates')],
-    [sg.Text('Altitude angle is ' + str(altitude))],
-    [sg.Text('Azimuth angle is ' + str(azimuth))],
-    [sg.Button("OK")]
-    ]
+    print(values)
 
-window = sg.Window('Coordinate Translator', layout)
-event = window.read()
-window.close()
+
+    #save values with more convenient names
+    ra = str(values[0])
+    dec = str(values[1])
+    observer_lat = str(values[2])
+    observer_lon = str(values[3])
+    observer_elevation = str(values[4])
+    observation_time = str(values[5]) + "T" + str(values[6])
+
+    #use function for coords transform
+    altitude, azimuth = calculate_alt_az(ra, dec, observer_lat, observer_lon, observer_elevation, observation_time)
+
+    #round values
+    altitude = round(altitude, 2)
+    azimuth = round(azimuth, 2)
+
+#display angles in a new window
+    layout = [
+        [sg.Text('Transformed Coordinates')],
+        [sg.Text('Altitude angle is ' + str(altitude) + ' degrees')],
+        [sg.Text('Azimuth angle is ' + str(azimuth) + ' degrees')],
+        [sg.Button("OK")]
+        ]
+
+    window = sg.Window('Coordinate Translator', layout)
+    event = window.read()
+    window.close()
+
+    print(altitude, azimuth)
+
+    #remove negative signs
+    def remove_dash(input_string):
+        if '-' in input_string:
+            input_string = input_string.replace('-', '')
+        return input_string
+
+    result1 = remove_dash(observer_lat)
+    print("Result:", result1)
+
+    result2 = remove_dash(observer_lon)
+    print("Result:", result2)
+
+    #split up inputs for use on the map
+    lat_d = result1[0] + result1[1]
+    lat_m = result1[3] + result1[4]
+    lat_s = result1[6] + result1[7]
+
+    lon_d = result2[0] + result2[1]
+    lon_m = result2[3] + result2[4]
+    lon_s = result2[6] + result2[7]
+
+    lat_d = int(lat_d)
+    lat_m = int(lat_m)
+    lat_s = int(lat_s)
+
+    lon_d = int(lon_d)
+    lon_m = int(lon_m)
+    lon_s = int(lon_s)
+
+    print(lat_d, lat_m, lat_s, lon_d, lon_m, lon_s)
+
+    #separate file with function to make a map of earth
+    MapCode.use(lat_d, lat_m, lat_s, lon_d, lon_m, lon_s)
+
+if __name__ == "__main__":
+    script1_function()
